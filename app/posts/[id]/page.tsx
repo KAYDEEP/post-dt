@@ -6,31 +6,20 @@ import { useAppSelector, useAppDispatch } from "@/redux/hooks";
 import { getPostAsync } from "@/redux/slices/postSlice";
 import styles from "@/styles/Home.module.css";
 
-interface PostDetailsProps {
-  params: { id: string };
-}
-
-const PostDetails: React.FC<PostDetailsProps> = ({ params }) => {
-  const { id } = params; // Extract ID from props
-  const dispatch = useAppDispatch();
+const PostDetails = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const { post, postDetailsRequestStatus, error } = useAppSelector((state: { post: any }) => state.post);
   const router = useRouter();
+  const dispatch = useAppDispatch();
 
-  const { post, postDetailsRequestStatus, error } = useAppSelector(
-    (state) => state.post
-  );
+  // Await the params to resolve the promise
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
-  // Fetch post details when ID changes
   useEffect(() => {
     if (id) {
-      dispatch(getPostAsync(+id)); // Convert ID to a number
+      dispatch(getPostAsync(+id));
     }
   }, [dispatch, id]);
-
-  // Handle invalid ID or missing post
-  if (!id) {
-    router.push("/404");
-    return null;
-  }
 
   return (
     <main className={styles.main}>
@@ -39,17 +28,15 @@ const PostDetails: React.FC<PostDetailsProps> = ({ params }) => {
       <div className={styles.messageContainer}>
         {postDetailsRequestStatus === "pending" && <div>Loading...</div>}
         {postDetailsRequestStatus === "rejected" && (
-          <div className={styles.error}>
-            Error: {error?.message || "Failed to fetch post details"}
-          </div>
+          <div className={styles.error}>Error: {error?.message}</div>
         )}
       </div>
 
-      {postDetailsRequestStatus === "fulfilled" && post && (
+      {postDetailsRequestStatus === "fulfilled" && (
         <div className={styles.grid}>
           <div className={styles.card}>
-            <h2>{post.title}</h2>
-            <p>{post.body}</p>
+            <h2>{post?.title}</h2>
+            <p>{post?.body}</p>
           </div>
         </div>
       )}
